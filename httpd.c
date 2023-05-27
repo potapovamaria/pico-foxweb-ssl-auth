@@ -16,6 +16,7 @@
 #define MAX_CONNECTIONS 1000
 #define BUF_SIZE 65535
 #define QUEUE_SIZE 1000000
+#define N 80
 
 static int listenfd;
 int *clients;
@@ -82,13 +83,71 @@ static SSL_CTX *get_server_context(const char *ca_pem, const char *cert_pem, con
   /* Specify that we need to verify the client as well */
   SSL_CTX_set_verify(ctx,
                      SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
-                     NULL);
+                     verify_callback);
 
   /* We accept only certificates signed only by the CA himself */
   SSL_CTX_set_verify_depth(ctx, 1);
 
   /* Done, return the context */
   return ctx;
+}
+
+char *GetClientCertCN(char str[256]) {
+  // printf("str : %s\n", str);
+  char sep[3] = "CN=";
+  char *istr;
+  istr = strtok(str, sep);
+  char *result;
+  // Выделение последующих частей
+  while (istr != NULL) {
+    result = istr;
+    // Выделение очередной части строки
+    istr = strtok(NULL, sep);
+  }
+  return result;
+}
+
+static int verify_callback(int preverify_ok, X509_STORE_CTX *ctx) {
+  char buf[256];
+  X509 *err_cert;
+  int err, depth;
+  SSL *ssl;
+  FILE *myfile;
+  char arr[N];
+  char *ClientCN;
+
+  err_cert = X509_STORE_CTX_get_current_cert(ctx);
+  err = X509_STORE_CTX_get_error(ctx);
+  depth = X509_STORE_CTX_get_error_depth(ctx);
+
+  /*
+   * Retrieve the pointer to the SSL of the connection currently treated
+   * and the application specific data stored into the SSL object.
+   */
+  ssl = X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx());
+
+  X509_NAME_oneline(X509_get_subject_name(err_cert), buf, 256);
+  myfile = fopen("/home/mary/https/pbps-master/04.pico-foxweb/users.txt", "r");
+
+  if (depth == 0) {
+    // printf("ClientUserCN: %s\n", GetClientCertCN(buf));
+    ClientCN = GetClientCertCN(buf);
+    printf("ClienCN1: %s\n", ClientCN);
+    while (fgets(arr, N, myfile) != NULL) {
+      arr[strcspn(arr, "\n")] = 0;
+      // printf("File: %s, ClientCN: %s\n", arr, ClientCN);
+      if (!strcmp(arr, ClientCN)) {
+        printf("auth is OK %s\n", ClientCN);
+        return preverify_ok;
+      }
+    }
+    printf("Auth is not successful. There is no access for: %s\n", ClientCN);
+    printf("\n");
+    fclose(myfile);
+  }
+  // } else {
+  //   return 0;
+  // }
 }
 
 void serve_forever(const char *PORT, const char *ca_pem, const char *cert_pem, const char *key_pem) {

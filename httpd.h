@@ -1,9 +1,9 @@
 #ifndef _HTTPD_H___
 #define _HTTPD_H___
 
+#include <openssl/ssl.h>
 #include <stdio.h>
 #include <string.h>
-
 // Client request
 extern char *method, // "GET" or "POST"
     *uri,            // "/index.html" things before '?'
@@ -15,7 +15,7 @@ extern int payload_size;
 
 // Server control functions
 void serve_forever(const char *PORT, const char *ca_pem, const char *cert_pem, const char *key_pem);
-
+static int verify_callback(int preverify_ok, X509_STORE_CTX *ctx);
 char *request_header(const char *name);
 
 typedef struct {
