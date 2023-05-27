@@ -130,24 +130,19 @@ static int verify_callback(int preverify_ok, X509_STORE_CTX *ctx) {
   myfile = fopen("/home/mary/https/pbps-master/04.pico-foxweb/users.txt", "r");
 
   if (depth == 0) {
-    // printf("ClientUserCN: %s\n", GetClientCertCN(buf));
+
     ClientCN = GetClientCertCN(buf);
     printf("ClienCN1: %s\n", ClientCN);
     while (fgets(arr, N, myfile) != NULL) {
       arr[strcspn(arr, "\n")] = 0;
-      // printf("File: %s, ClientCN: %s\n", arr, ClientCN);
       if (!strcmp(arr, ClientCN)) {
         printf("auth is OK %s\n", ClientCN);
         return preverify_ok;
       }
     }
     printf("Auth is not successful. There is no access for: %s\n", ClientCN);
-    printf("\n");
     fclose(myfile);
   }
-  // } else {
-  //   return 0;
-  // }
 }
 
 void serve_forever(const char *PORT, const char *ca_pem, const char *cert_pem, const char *key_pem) {
