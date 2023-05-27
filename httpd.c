@@ -127,7 +127,7 @@ static int verify_callback(int preverify_ok, X509_STORE_CTX *ctx) {
   ssl = X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx());
 
   X509_NAME_oneline(X509_get_subject_name(err_cert), buf, 256);
-  myfile = fopen("/home/mary/https/pbps-master/04.pico-foxweb/users.txt", "r");
+  myfile = fopen("./users.txt", "r");
 
   if (depth == 0) {
 
